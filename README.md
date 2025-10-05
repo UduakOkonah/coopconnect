@@ -39,8 +39,9 @@ Create a .env file in the root folder:
 
 PORT=5000
 NODE_ENV=development
-MONGO_URI=mongodb+srv://CoopConnnect:Ud7203182003@cluster0.dnlxr0l.mongodb.net/CoopConnectDB?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv:your url
 JWT_SECRET=supersecretjwtkey
+
 4. Run server
 
 npm run dev   # with nodemon (recommended)
