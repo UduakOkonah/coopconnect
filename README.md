@@ -15,12 +15,21 @@ Built for CSE 341 Final Project (BYU-I).
 
 ---
 
-## Project Setup
+## Getting Started
 
-### 1. Clone repo
-```bash
+### Prerequisites
+
+- Node.js >= 18
+- MongoDB connection (local or cloud)
+- npm
+
+### Installation
+
+1. Clone repo
+
 git clone https://github.com/<your-team-repo>/CoopConnect.git
 cd CoopConnect
+
 2. Install dependencies
 npm install
 
@@ -80,10 +89,10 @@ Both: JWT authentication, testing, video presentation
 Deployment
 
 The app is deployed on Render:
-https://yourapp.onrender.com
+[App](https://yourapp.onrender.com)
 
 Swagger docs are available at:
-https://yourapp.onrender.com/api-docs
+[Swagger Doc](https://coopconnect.onrender.com/api-docs)
 
 License
 MIT
