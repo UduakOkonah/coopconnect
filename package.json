@@ -1,7 +1,7 @@
 {
   "name": "coopconnect",
   "version": "1.0.0",
-  "description": "",
+  "description": "CoopConnect is a Node.js + Express API for managing cooperatives, users, posts, and contributions.  \r Built for CSE 341 Final Project (BYU-I).",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -29,12 +29,14 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.0",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.19.1",
     "morgan": "^1.10.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "eslint": "^9.37.0",
     "nodemon": "^3.1.10"
   }
 }
