@@ -9,24 +9,51 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// connect database
+// Connect to database
 connectDB();
 
+// Middleware
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json());
-if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
-// routes
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+// Dynamic Swagger setup (auto-detects environment)
+app.use(
+  '/api-docs',
+  (req, res, next) => {
+    // dynamically set server URL to match the environment (local or Render)
+    specs.servers = [
+      {
+        url: `${req.protocol}://${req.get('host')}`,
+      },
+    ];
+    next();
+  },
+  swaggerUi.serve,
+  swaggerUi.setup(specs)
+);
+
+// Routes
 app.use('/api/users', require('./routes/users'));
 app.use('/api/cooperatives', require('./routes/cooperatives'));
 
-// health check
+// Health check route
 app.get('/', (req, res) => res.json({ ok: true }));
 
-// error handler (must be last)
+// Error handler (must be last)
 app.use(errorHandler);
 
+// Server start
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server running on port ${PORT}`)
+);
