@@ -10,24 +10,28 @@ const options = {
       description: 'API for cooperatives, users, posts, and contributions',
     },
     servers: [
-      { url: 'http://localhost:5000' }
+      {
+        url: process.env.NODE_ENV === 'production'
+          ? 'https://coopconnect-jls2.onrender.com'
+          : 'http://localhost:5000',
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT', // This makes Swagger show "Authorize" with JWT
+          bearerFormat: 'JWT',
         },
       },
     },
     security: [
       {
-        bearerAuth: [], // Apply globally if you want
+        bearerAuth: [],
       },
     ],
   },
-  apis: ['./routes/*.js'], // Swagger will scan routes
+  apis: ['./routes/*.js'],
 };
 
 const specs = swaggerJsdoc(options);
