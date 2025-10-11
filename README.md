@@ -90,10 +90,10 @@ Both: JWT authentication, testing, video presentation
 Deployment
 
 The app is deployed on Render:
-[App](https://yourapp.onrender.com)
+[App](https://coopconnect-jls2.onrender.com)
 
 Swagger docs are available at:
-[Swagger Doc](https://coopconnect.onrender.com/api-docs)
+[Swagger Doc](https://coopconnect-jls2.onrender.com/api-docs)
 
 License
 MIT
