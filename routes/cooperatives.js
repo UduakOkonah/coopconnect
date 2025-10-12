@@ -1,6 +1,7 @@
+// routes/cooperatives.js
 const express = require('express');
 const router = express.Router();
-const coops = require('../controllers/cooperativescontroller'); 
+const coops = require('../controllers/cooperativescontroller');
 const { check } = require('express-validator');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -39,7 +40,12 @@ const { protect, authorize } = require('../middleware/auth');
 router.post(
   '/',
   protect,
-  [check('name').notEmpty().withMessage('Name required')],
+  authorize('admin', 'cooperativeManager'),
+  [
+    check('name').notEmpty().withMessage('Name required'),
+    check('description').notEmpty().withMessage('Description required'),
+    check('location').notEmpty().withMessage('Location required'),
+  ],
   coops.create
 );
 
@@ -103,15 +109,18 @@ router.get('/:id', coops.getOne);
  *     responses:
  *       200:
  *         description: Cooperative updated
- *         content:
- *           application/json:
- *             example:
- *               _id: "60f7f3c2e815cd23a4b5d9a1"
- *               name: "Updated Cooperative"
- *               description: "Updated description"
- *               location: "Lagos"
  */
-router.put('/:id', protect, coops.update);
+router.put(
+  '/:id',
+  protect,
+  authorize('admin', 'cooperativeManager'),
+  [
+    check('name').optional().notEmpty().withMessage('Name cannot be empty'),
+    check('description').optional().notEmpty().withMessage('Description cannot be empty'),
+    check('location').optional().notEmpty().withMessage('Location cannot be empty'),
+  ],
+  coops.update
+);
 
 /**
  * @openapi
@@ -130,11 +139,12 @@ router.put('/:id', protect, coops.update);
  *     responses:
  *       200:
  *         description: Cooperative deleted
- *         content:
- *           application/json:
- *             example:
- *               message: "Cooperative deleted successfully"
  */
-router.delete('/:id', protect, authorize('admin'), coops.remove);
+router.delete(
+  '/:id',
+  protect,
+  authorize('admin'),
+  coops.remove
+);
 
 module.exports = router;

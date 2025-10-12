@@ -9,6 +9,15 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
+const bcrypt = require('bcryptjs');
+(async () => {
+  const hash = await bcrypt.hash('123456', 10);
+  const match = await bcrypt.compare('123456', hash);
+  console.log({ hash, match });
+})();
+
+
 // Connect to database
 connectDB();
 
@@ -26,11 +35,10 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Dynamic Swagger setup (auto-detects environment)
+// Dynamic Swagger setup
 app.use(
   '/api-docs',
   (req, res, next) => {
-    // dynamically set server URL to match the environment (local or Render)
     specs.servers = [
       {
         url: `${req.protocol}://${req.get('host')}`,
@@ -43,8 +51,10 @@ app.use(
 );
 
 // Routes
-app.use('/api/users', require('./routes/users'));
-app.use('/api/cooperatives', require('./routes/cooperatives'));
+app.use('/api/users', require('./routes/users')); // user registration, login, CRUD
+app.use('/api/cooperatives', require('./routes/cooperatives')); // cooperatives CRUD
+app.use('/api/posts', require('./routes/posts')); // posts CRUD with role-based access
+app.use('/api/contributions', require('./routes/contributions')); // contributions CRUD with role-based access
 
 // Health check route
 app.get('/', (req, res) => res.json({ ok: true }));

@@ -1,8 +1,9 @@
+// routes/users.js
 const express = require('express');
 const router = express.Router();
 const users = require('../controllers/usersController');
 const { check } = require('express-validator');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 /**
  * @openapi
@@ -22,10 +23,21 @@ const { protect } = require('../middleware/auth');
  *       content:
  *         application/json:
  *           schema:
+ *             type: object
  *             properties:
- *               name: { type: string }
- *               email: { type: string }
- *               password: { type: string }
+ *               name:
+ *                 type: string
+ *                 example: "Sister Eke"
+ *               email:
+ *                 type: string
+ *                 example: "eke@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 example: "user"
  *     responses:
  *       201:
  *         description: Created
@@ -35,7 +47,11 @@ router.post(
   [
     check('name').notEmpty().withMessage('Name required'),
     check('email').isEmail().withMessage('Valid email required'),
-    check('password').isLength({ min: 6 }).withMessage('Password must be 6+ chars')
+    check('password').isLength({ min: 6 }).withMessage('Password must be 6+ chars'),
+    check('role')
+      .optional()
+      .isIn(['user', 'admin'])
+      .withMessage('Role must be either user or admin')
   ],
   users.register
 );
@@ -51,9 +67,14 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
+ *             type: object
  *             properties:
- *               email: { type: string }
- *               password: { type: string }
+ *               email:
+ *                 type: string
+ *                 example: "eke@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "123456"
  *     responses:
  *       200:
  *         description: OK
@@ -79,7 +100,7 @@ router.post(
  *       200:
  *         description: OK
  */
-router.get('/', protect, users.getAll);
+router.get('/', protect, authorize('admin'), users.getAll);
 
 /**
  * @openapi
@@ -99,7 +120,7 @@ router.get('/', protect, users.getAll);
  *       200:
  *         description: OK
  */
-router.get('/:id', protect, users.getOne);
+router.get('/:id', protect, authorize('admin', 'cooperativeManager'), users.getOne);
 
 /**
  * @openapi
@@ -122,18 +143,22 @@ router.get('/:id', protect, users.getOne);
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *                 example: Imaobong Updated
- *               email:
- *                 type: string
- *                 example: ima.updated@example.com
+ *               name: { type: string }
+ *               email: { type: string }
  *     responses:
  *       200:
  *         description: Updated user
  */
-router.put('/:id', protect, users.update);
-
+router.put(
+  '/:id',
+  protect,
+  authorize('admin', 'cooperativeManager'),
+  [
+    check('name').optional().notEmpty().withMessage('Name cannot be empty'),
+    check('email').optional().isEmail().withMessage('Email must be valid'),
+  ],
+  users.update
+);
 
 /**
  * @openapi
@@ -153,6 +178,11 @@ router.put('/:id', protect, users.update);
  *       200:
  *         description: Deleted
  */
-router.delete('/:id', protect, users.remove);
+router.delete(
+  '/:id',
+  protect,
+  authorize('admin'),
+  users.remove
+);
 
 module.exports = router;
