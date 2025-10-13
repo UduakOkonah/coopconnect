@@ -1,3 +1,4 @@
+// config/swagger.js
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
@@ -7,27 +8,26 @@ const options = {
     info: {
       title: 'CoopConnect API',
       version: '1.0.0',
-      description: 'API for cooperatives, users, posts, and contributions',
+      description: 'REST API for managing cooperatives, users, posts, and contributions.',
     },
     servers: [
-      { url: 'http://localhost:5000' }
+      {
+        url: process.env.BASE_URL || 'http://localhost:5000',
+        description: 'Dynamic server (auto-updated in production)',
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT', // This makes Swagger show "Authorize" with JWT
+          bearerFormat: 'JWT',
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [], // Apply globally if you want
-      },
-    ],
+    security: [{ bearerAuth: [] }],
   },
-  apis: ['./routes/*.js'], // Swagger will scan routes
+  apis: ['./routes/*.js'], // scans route files for Swagger annotations
 };
 
 const specs = swaggerJsdoc(options);

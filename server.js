@@ -12,27 +12,41 @@ const app = express();
 // 🧱 Connect to MongoDB
 connectDB();
 
-// 🧩 Middleware
+// 🧩 Security Middleware
 app.use(helmet());
 
-// ✅ CORS setup (explicitly allow Swagger & client)
+// ✅ Enhanced CORS setup (Swagger + Render + local)
 app.use(
   cors({
-    origin: '*', // Allow all origins for development/testing
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: '*', // Allow all origins for development and Render
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
 app.use(express.json());
 
-// 🧾 HTTP request logging (only in dev)
+// 🧾 HTTP Request Logging (only in dev)
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// 📘 Swagger Docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+// 📘 Dynamic Swagger Docs (auto-detect environment)
+app.use(
+  '/api-docs',
+  (req, res, next) => {
+    // Dynamically set the API base URL depending on host and protocol
+    specs.servers = [
+      {
+        url: `${req.protocol}://${req.get('host')}`,
+        description: 'Dynamic server (auto-detected)',
+      },
+    ];
+    next();
+  },
+  swaggerUi.serve,
+  swaggerUi.setup(specs, { explorer: true })
+);
 
 // 🧍 User Routes
 app.use('/api/users', require('./routes/users'));
@@ -45,11 +59,11 @@ app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Welcome to the CoopConnect API 🚀',
-    docs: `${process.env.BASE_URL || 'http://localhost:5000'}/api-docs`,
+    docs: `${process.env.BASE_URL || `${req.protocol}://${req.get('host')}`}/api-docs`,
   });
 });
 
-// ⚠️ Handle undefined routes
+// ⚠️ Handle Undefined Routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -57,11 +71,13 @@ app.use((req, res) => {
   });
 });
 
-// 🧱 Global Error Handler (last)
+// 🧱 Global Error Handler (must be last)
 app.use(errorHandler);
 
 // 🚀 Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ CoopConnect API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(
+    `✅ CoopConnect API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+  );
 });
