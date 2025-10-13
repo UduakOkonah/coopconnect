@@ -7,29 +7,50 @@ const options = {
     info: {
       title: 'CoopConnect API',
       version: '1.0.0',
-      description: 'API for cooperatives, users, posts, and contributions',
+      description: `
+        The CoopConnect API allows cooperatives and members to register, 
+        manage profiles, post announcements, and track contributions.
+        
+        ### Features
+        - User authentication with JWT
+        - Cooperative management (CRUD)
+        - Posts and contributions (coming in Week 6)
+        - Secure endpoints using bearer tokens
+      `,
+      contact: {
+        name: 'CoopConnect Team',
+        email: 'team@coopconnect.com',
+      },
     },
     servers: [
-      { url: 'http://localhost:5000' }
+      {
+        url: process.env.BASE_URL || 'http://localhost:5000',
+        description: 'Development server',
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT', // This makes Swagger show "Authorize" with JWT
+          bearerFormat: 'JWT',
+          description: 'Enter JWT token obtained after login',
         },
       },
     },
     security: [
       {
-        bearerAuth: [], // Apply globally if you want
+        bearerAuth: [],
       },
     ],
   },
-  apis: ['./routes/*.js'], // Swagger will scan routes
+  // 👇 Scans all route files for Swagger annotations
+  apis: ['./routes/*.js'],
 };
 
 const specs = swaggerJsdoc(options);
 
-module.exports = { swaggerUi, specs };
+module.exports = {
+  swaggerUi,
+  specs,
+};
