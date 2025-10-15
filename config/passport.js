@@ -1,8 +1,6 @@
-// config/passport.js
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const User = require("../models/user"); // adjust path if needed
-const jwt = require("jsonwebtoken");
+const User = require("../models/user");
 require("dotenv").config();
 
 passport.use(
@@ -14,7 +12,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Find or create user
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
@@ -22,9 +19,12 @@ passport.use(
             googleId: profile.id,
             displayName: profile.displayName,
             email: profile.emails?.[0]?.value || "",
+            password: Math.random().toString(36).slice(-8), // dummy password
+            username: profile.displayName,
           });
         }
 
+        // ✅ pass user object only (not wrapped)
         done(null, user);
       } catch (err) {
         done(err, null);
@@ -38,3 +38,5 @@ passport.deserializeUser(async (id, done) => {
   const user = await User.findById(id);
   done(null, user);
 });
+
+module.exports = passport;
