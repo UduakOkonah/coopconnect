@@ -3,9 +3,12 @@ const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
+const passport = require('passport');
+require('./config/passport'); // 🧭 Google OAuth config
 const connectDB = require('./config/db');
 const { swaggerUi, specs } = require('./config/swagger');
 const errorHandler = require('./middleware/errorHandler');
+const http = require('http');
 
 const app = express();
 
@@ -31,11 +34,13 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// 🚀 Initialize Passport (Google OAuth)
+app.use(passport.initialize());
+
 // 📘 Dynamic Swagger Docs (auto-detect environment)
 app.use(
   '/api-docs',
   (req, res, next) => {
-    // Dynamically set the API base URL depending on host and protocol
     specs.servers = [
       {
         url: `${req.protocol}://${req.get('host')}`,
@@ -48,11 +53,20 @@ app.use(
   swaggerUi.setup(specs, { explorer: true })
 );
 
+// 🧍 Auth Routes (Google OAuth)
+app.use('/auth', require('./routes/auth'));
+
 // 🧍 User Routes
 app.use('/api/users', require('./routes/users'));
 
+// 💰 Contributions Routes
+app.use('/api/contributions', require('./routes/contributions'));
+
 // 🏢 Cooperative Routes
 app.use('/api/cooperatives', require('./routes/cooperatives'));
+
+// 📰 Posts Routes
+app.use('/api/posts', require('./routes/posts'));
 
 // 🌍 Health Check Route
 app.get('/', (req, res) => {
@@ -74,10 +88,14 @@ app.use((req, res) => {
 // 🧱 Global Error Handler (must be last)
 app.use(errorHandler);
 
-// 🚀 Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(
-    `✅ CoopConnect API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
-  );
+// ⚙️ Create HTTP server and increase timeout limits (for Render stability)
+const PORT = process.env.PORT || 10000; // Render default port
+const HOST = '0.0.0.0';
+
+const server = http.createServer(app);
+server.keepAliveTimeout = 120000; // 2 minutes
+server.headersTimeout = 120000;
+
+server.listen(PORT, HOST, () => {
+  console.log(`✅ CoopConnect API running on http://${HOST}:${PORT}`);
 });
