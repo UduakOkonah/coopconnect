@@ -4,7 +4,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const passport = require("passport");
-require("./config/passport"); // 🧭 Load Google OAuth config
+require("./config/passport"); // 🧭 Google OAuth config
 const connectDB = require("./config/db");
 const { swaggerUi, specs } = require("./config/swagger");
 const errorHandler = require("./middleware/errorHandler");
@@ -18,16 +18,16 @@ connectDB();
 // 🧩 Security Middleware
 app.use(helmet());
 
-// ✅ Enhanced CORS setup (for Swagger + Render + Localhost)
+// ✅ CORS setup (for Swagger + Render + Localhost)
 app.use(
   cors({
-    origin: "*", // For development and Render; restrict in production if needed
+    origin: "*", // Allow all for dev/Render
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// 🧾 Request Logging (only in dev)
+// 🧾 Logging (only in dev)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -54,19 +54,11 @@ app.use(
 // ✅ JSON Middleware
 app.use(express.json());
 
-// 🧍 Auth Routes (Login, Register, Google OAuth)
+// 🧍 Routes
 app.use("/auth", require("./routes/auth"));
-
-// 🧍 User Routes
 app.use("/api/users", require("./routes/users"));
-
-// 💰 Contributions Routes
 app.use("/api/contributions", require("./routes/contributions"));
-
-// 🏢 Cooperative Routes
 app.use("/api/cooperatives", require("./routes/cooperatives"));
-
-// 📰 Posts Routes
 app.use("/api/posts", require("./routes/posts"));
 
 // 🌍 Health Check Route
@@ -91,15 +83,19 @@ app.use((req, res) => {
 // 🧱 Global Error Handler
 app.use(errorHandler);
 
-// ⚙️ HTTP Server Config (Render-friendly)
-const PORT = process.env.PORT || 10000; // Render default port
-const HOST = "0.0.0.0";
+// 🧪 Export app for testing (Jest + Supertest)
+module.exports = app;
 
-const server = http.createServer(app);
-server.keepAliveTimeout = 120000; // prevent Render 502s
-server.headersTimeout = 120000;
+// 🚀 Only start the server when NOT in test mode
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT || 10000; // Render default
+  const HOST = "0.0.0.0";
 
-// 🚀 Start Server
-server.listen(PORT, HOST, () => {
-  console.log(`✅ CoopConnect API running on http://${HOST}:${PORT}`);
-});
+  const server = http.createServer(app);
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 120000;
+
+  server.listen(PORT, HOST, () => {
+    console.log(`✅ CoopConnect API running on http://${HOST}:${PORT}`);
+  });
+}
