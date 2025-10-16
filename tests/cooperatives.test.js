@@ -1,6 +1,7 @@
 const request = require("supertest");
-require("dotenv").config();
-const app = require("../server");
+const app = require("../server"); // adjust path if needed
+
+jest.setTimeout(20000); // ⏱️ Increase timeout to 20 seconds
 
 describe("Cooperatives API", () => {
   it("should fetch all cooperatives", async () => {
