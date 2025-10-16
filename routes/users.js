@@ -4,6 +4,8 @@ const router = express.Router();
 const users = require('../controllers/usersController');
 const { check } = require('express-validator');
 const { protect, authorize } = require('../middleware/auth');
+const passport = require('passport');
+require('../config/passport'); // make sure passport strategies are loaded
 
 /**
  * @openapi
@@ -88,6 +90,44 @@ router.post(
   users.login
 );
 
+// ------------------ GOOGLE OAUTH ROUTES ------------------ //
+router.get(
+  '/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/api/users/auth/google/failure' }),
+  async (req, res) => {
+    const token = req.user.getSignedJwtToken();
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Google Login Successful</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f4f7fb; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #333; }
+            .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: center; width: 400px; }
+            a { display:inline-block; text-decoration:none; background:#007bff; color:white; padding:10px 20px; border-radius:5px; font-size:16px; margin-top:20px; }
+            input { width: 100%; padding: 8px; margin-top: 10px; text-align: center; border: 1px solid #ccc; border-radius: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>✅ Google OAuth Login Successful</h2>
+            <p>Copy your token below and test secured routes in Swagger.</p>
+            <input value="${token}" readonly />
+            <a href="/api-docs">Go to Swagger Docs</a>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+);
+
+// ------------------ PROTECTED USER ROUTES ------------------ //
+
 /**
  * @openapi
  * /api/users:
@@ -98,7 +138,22 @@ router.post(
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: OK
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   role:
+ *                     type: string
  */
 router.get('/', protect, authorize('admin'), users.getAll);
 
@@ -178,11 +233,6 @@ router.put(
  *       200:
  *         description: Deleted
  */
-router.delete(
-  '/:id',
-  protect,
-  authorize('admin'),
-  users.remove
-);
+router.delete('/:id', protect, authorize('admin'), users.remove);
 
 module.exports = router;

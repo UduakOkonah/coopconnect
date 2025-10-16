@@ -1,52 +1,58 @@
 const User = require('../models/user');
-const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
+const { validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
+
+/**
+ * Generate JWT
+ */
+exports.generateJwt = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+};
 
 /**
  * ✅ Register user (auto-assign admin if first)
  */
 exports.register = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { name, email, password, role } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (await User.findOne({ email })) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // ✅ Check if there are any admins in the database
+    // Auto-assign admin if first user
     const adminExists = await User.exists({ role: 'admin' });
+    const assignedRole = !adminExists
+      ? 'admin'
+      : role && req.user?.role === 'admin'
+      ? role
+      : 'user';
 
-    // ✅ Assign role
-    let assignedRole;
-    if (!adminExists) {
-      assignedRole = 'admin';
-      console.log('🟢 First user registered → assigned as admin');
-    } else {
-      assignedRole = role && req.user && req.user.role === 'admin' ? role : 'user';
-    }
-
-    // Create user
+    // ✅ Create user (fixed)
     const user = await User.create({
-      name,
+      username: name || email.split('@')[0], // use provided name or derive from email
       email,
-      password,
+      password: password || Math.random().toString(36).slice(-8), // generate password if missing
       role: assignedRole
     });
 
-
-    // Create token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
+    // Generate token using schema method
+    const token = user.getSignedJwtToken();
 
     res.status(201).json({
       id: user._id,
-      name: user.name,
+      name: user.username, // since you used `username` in your model
       email: user.email,
       role: user.role,
       token
@@ -57,6 +63,7 @@ exports.register = async (req, res) => {
   }
 };
 
+
 /**
  * ✅ Login user and return JWT
  */
@@ -65,48 +72,33 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+      return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    // ✅ Explicitly include password even if schema hides it
     const user = await User.findOne({ email }).select('+password');
-
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials (user not found)' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    console.log("🟡 Found user:", user.email, "Hashed password:", user.password);
-
-    // ✅ Compare using bcrypt
-    const isMatch = await bcrypt.compare(password, user.password);
-
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials (password mismatch)' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
+    const token = user.getSignedJwtToken();
 
     res.status(200).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token
     });
   } catch (err) {
     console.error('❌ Login error:', err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
-
-
 /**
  * Get all users (admin only)
  */
@@ -174,4 +166,55 @@ exports.remove = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * Generate JWT for a user
+ */
+exports.generateJwt = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+};
+
+/**
+ * Get user by ID (for Passport deserialization)
+ */
+exports.getUserById = async (id) => {
+  try {
+    const user = await User.findById(id).select('-password');
+    return user;
+  } catch (error) {
+    console.error('❌ Error fetching user by ID:', error);
+    throw error;
+  }
+};
+
+
+/**
+ * Find or create a Google user (auto-assign admin if first)
+ */
+exports.findOrCreateGoogleUser = async (profile) => {
+  const email = profile.emails[0].value;
+  let user = await User.findOne({ email });
+
+  // Check if any admin exists in DB
+  const adminExists = await User.exists({ role: 'admin' });
+  const assignedRole = !adminExists ? 'admin' : 'user';
+
+  if (!user) {
+    user = await User.create({
+      name: profile.displayName,
+      email,
+      password: Math.random().toString(36).slice(-8), // random password
+      role: assignedRole
+    });
+    console.log('🟢 New Google user created:', email, 'Role:', assignedRole);
+  } else {
+    console.log('🟡 Existing Google user:', email);
+  }
+
+  return user;
 };
