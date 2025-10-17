@@ -12,8 +12,9 @@ const options = {
     },
     servers: [
       {
-        url: process.env.BASE_URL || 'http://localhost:5000',
-        description: 'Dynamic server (auto-updated in production)',
+        url: process.env.NODE_ENV === 'production'
+          ? 'https://coopconnect-jls2.onrender.com'
+          : 'http://localhost:5000',
       },
     ],
     components: {
