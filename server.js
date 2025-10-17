@@ -77,4 +77,11 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Start server only if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
+
+
+// Export app for testing
+module.exports = app;
