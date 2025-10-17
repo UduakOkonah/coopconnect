@@ -1,158 +1,38 @@
-const express = require('express');
+// routes/users.js
+const express = require("express");
 const router = express.Router();
-const users = require('../controllers/usersController');
-const { check } = require('express-validator');
-const { protect } = require('../middleware/auth');
+const users = require("../controllers/usersController");
+const { check } = require("express-validator");
+const { protect } = require("../middleware/auth");
 
-/**
- * @openapi
- * tags:
- *   name: Users
- *   description: User management
- */
-
-/**
- * @openapi
- * /api/users:
- *   post:
- *     tags: [Users]
- *     summary: Register a user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             properties:
- *               name: { type: string }
- *               email: { type: string }
- *               password: { type: string }
- *     responses:
- *       201:
- *         description: Created
- */
+// Register user
 router.post(
-  '/',
+  "/",
   [
-    check('name').notEmpty().withMessage('Name required'),
-    check('email').isEmail().withMessage('Valid email required'),
-    check('password').isLength({ min: 6 }).withMessage('Password must be 6+ chars')
+    check("name").notEmpty().withMessage("Name required"),
+    check("email").isEmail().withMessage("Valid email required"),
+    check("password").isLength({ min: 6 }).withMessage("Password must be 6+ chars"),
   ],
   users.register
 );
 
-/**
- * @openapi
- * /api/users/login:
- *   post:
- *     tags: [Users]
- *     summary: Login a user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             properties:
- *               email: { type: string }
- *               password: { type: string }
- *     responses:
- *       200:
- *         description: OK
- */
+// Login user
 router.post(
-  '/login',
-  [
-    check('email').isEmail(),
-    check('password').notEmpty()
-  ],
+  "/login",
+  [check("email").isEmail(), check("password").notEmpty()],
   users.login
 );
 
-/**
- * @openapi
- * /api/users:
- *   get:
- *     tags: [Users]
- *     summary: Get all users
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: OK
- */
-router.get('/', protect, users.getAll);
+// Get all users
+router.get("/", protect, users.getAll);
 
-/**
- * @openapi
- * /api/users/{id}:
- *   get:
- *     tags: [Users]
- *     summary: Get one user by ID
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: OK
- */
-router.get('/:id', protect, users.getOne);
+// Get one user
+router.get("/:id", protect, users.getOne);
 
-/**
- * @openapi
- * /api/users/{id}:
- *   put:
- *     tags: [Users]
- *     summary: Update a user by ID
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: Imaobong Updated
- *               email:
- *                 type: string
- *                 example: ima.updated@example.com
- *     responses:
- *       200:
- *         description: Updated user
- */
-router.put('/:id', protect, users.update);
+// Update user
+router.put("/:id", protect, users.update);
 
-
-/**
- * @openapi
- * /api/users/{id}:
- *   delete:
- *     tags: [Users]
- *     summary: Delete a user by ID
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: Deleted
- */
-router.delete('/:id', protect, users.remove);
+// Delete user
+router.delete("/:id", protect, users.remove);
 
 module.exports = router;

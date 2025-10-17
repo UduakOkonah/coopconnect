@@ -1,64 +1,75 @@
-const Contribution = require('../models/contribution');
-const { validationResult } = require('express-validator');
+const Contribution = require("../models/contribution");
+const { validationResult } = require("express-validator");
 
-exports.getAllContributions = async (req, res) => {
+// ✅ Get all contributions
+exports.getAll = async (req, res, next) => {
   try {
     const contributions = await Contribution.find();
     res.status(200).json(contributions);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.getContributionById = async (req, res) => {
+// ✅ Get single contribution by ID
+exports.getOne = async (req, res, next) => {
   try {
     const contribution = await Contribution.findById(req.params.id);
-    if (!contribution) return res.status(404).json({ error: 'Contribution not found' });
+    if (!contribution)
+      return res.status(404).json({ error: "Contribution not found" });
     res.status(200).json(contribution);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.createContribution = async (req, res) => {
+// ✅ Create new contribution
+exports.create = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-  const { memberId, cooperativeId, amount } = req.body;
+  if (!errors.isEmpty())
+    return res.status(400).json({ errors: errors.array() });
 
   try {
-    const newContribution = await Contribution.create({ memberId, cooperativeId, amount });
+    const { memberId, cooperativeId, amount } = req.body;
+    const newContribution = await Contribution.create({
+      memberId,
+      cooperativeId,
+      amount,
+    });
     res.status(201).json(newContribution);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.updateContribution = async (req, res) => {
+// ✅ Update contribution by ID
+exports.update = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-  const { amount } = req.body;
+  if (!errors.isEmpty())
+    return res.status(400).json({ errors: errors.array() });
 
   try {
     const contribution = await Contribution.findByIdAndUpdate(
       req.params.id,
-      { amount },
+      { amount: req.body.amount },
       { new: true }
     );
-    if (!contribution) return res.status(404).json({ error: 'Contribution not found' });
+    if (!contribution)
+      return res.status(404).json({ error: "Contribution not found" });
     res.status(200).json(contribution);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.deleteContribution = async (req, res) => {
+// ✅ Delete contribution
+exports.remove = async (req, res, next) => {
   try {
     const contribution = await Contribution.findByIdAndDelete(req.params.id);
-    if (!contribution) return res.status(404).json({ error: 'Contribution not found' });
-    res.status(200).json({ message: 'Contribution deleted' });
+    if (!contribution)
+      return res.status(404).json({ error: "Contribution not found" });
+    res.status(200).json({ message: "Contribution deleted" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };

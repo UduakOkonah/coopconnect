@@ -1,3 +1,4 @@
+// routes/auth.js
 const express = require("express");
 const router = express.Router();
 const Joi = require("joi");
@@ -5,7 +6,7 @@ const User = require("../models/user");
 const { signUser } = require("../utils/jwt");
 const passport = require("passport");
 
-// Joi schemas
+// Joi validation schemas
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
@@ -17,7 +18,7 @@ const loginSchema = Joi.object({
   password: Joi.string().required(),
 });
 
-// ✅ Register route
+// ✅ Register
 router.post("/register", async (req, res, next) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
@@ -26,11 +27,7 @@ router.post("/register", async (req, res, next) => {
     const exists = await User.findOne({ email: value.email });
     if (exists) return res.status(409).json({ error: "Email already in use" });
 
-    const user = new User({
-      email: value.email,
-      password: value.password,
-      username: value.username,
-    });
+    const user = new User(value);
     await user.save();
 
     const token = signUser(user);
@@ -43,16 +40,15 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
-// ✅ Login route
+// ✅ Login
 router.post("/login", async (req, res, next) => {
   try {
     const { error, value } = loginSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
     const user = await User.findOne({ email: value.email });
-    if (!user || !(await user.comparePassword(value.password))) {
+    if (!user || !(await user.comparePassword(value.password)))
       return res.status(401).json({ error: "Invalid credentials" });
-    }
 
     const token = signUser(user);
     res.json({ token, user: { id: user._id, email: user.email } });
@@ -61,16 +57,12 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-// ✅ Google OAuth entry (stateless)
+// ✅ Google OAuth flow
 router.get(
   "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-    session: false, // 👈 prevents passport session middleware
-  })
+  passport.authenticate("google", { scope: ["profile", "email"], session: false })
 );
 
-// ✅ Google OAuth callback (stateless)
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -79,31 +71,24 @@ router.get(
   }),
   (req, res) => {
     const token = signUser(req.user);
-
-    // 👇 redirect to backend success page for testing (recommended)
-    const redirectUrl = `/auth/success?token=${token}`;
-    res.redirect(redirectUrl);
+    res.redirect(`/auth/success?token=${token}`);
   }
 );
 
-// ✅ Simple success route (for testing)
 router.get("/success", (req, res) => {
   const { token } = req.query;
   res.send(`
     <h2>✅ Google OAuth Successful!</h2>
-    <p>Copy your JWT token below:</p>
-    <code style="background:#eee;padding:6px 12px;display:inline-block;">${token}</code>
-    <p>Use this token in Swagger (Authorize > Bearer Token)</p>
-    <a href="/api-docs" style="display:block;margin-top:10px;">Go to Swagger Docs</a>
+    <p>Your token:</p>
+    <code>${token}</code>
+    <p>Use it for Bearer authorization in Swagger UI.</p>
   `);
 });
 
-// ✅ Google fail route
 router.get("/google/fail", (req, res) =>
   res.status(401).json({ error: "Google auth failed" })
 );
 
-// ✅ Stateless logout (for JWT)
 router.get("/logout", (req, res) => {
   res.json({ ok: true, message: "Logged out (stateless mode)" });
 });

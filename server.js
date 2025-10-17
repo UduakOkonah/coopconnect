@@ -4,15 +4,23 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const passport = require("passport");
-require("./config/passport"); // 🧭 Google OAuth config
-const connectDB = require("./config/db");
-const { swaggerUi, specs } = require("./config/swagger");
-const errorHandler = require("./middleware/errorHandler");
 const http = require("http");
+
+// 🧭 Google OAuth config
+require("./config/passport");
+
+// 🧱 MongoDB connection
+const connectDB = require("./config/db");
+
+// 🧾 Swagger setup
+const { swaggerUi, specs } = require("./config/swagger");
+
+// ⚠️ Error handler middleware
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
-// 🧱 Connect to MongoDB
+// ✅ Connect to MongoDB
 connectDB();
 
 // 🧩 Security Middleware
@@ -27,22 +35,26 @@ app.use(
   })
 );
 
-// 🧾 Logging (only in dev)
+// 🧾 Logging (only in development)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// 🚀 Initialize Passport (Google OAuth)
+// 🚀 Initialize Passport (for Google OAuth)
 app.use(passport.initialize());
+
+// ✅ Parse JSON bodies
+app.use(express.json());
 
 // 📘 Swagger Docs (Dynamic server detection)
 app.use(
   "/api-docs",
   (req, res, next) => {
+    // Dynamically set Swagger "servers" based on current request
     specs.servers = [
       {
         url: `${req.protocol}://${req.get("host")}`,
-        description: "Dynamic server (auto-detected)",
+        description: "Auto-detected server",
       },
     ];
     next();
@@ -51,10 +63,7 @@ app.use(
   swaggerUi.setup(specs, { explorer: true })
 );
 
-// ✅ JSON Middleware
-app.use(express.json());
-
-// 🧍 Routes
+// 🧍 API Routes
 app.use("/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/contributions", require("./routes/contributions"));
@@ -63,16 +72,15 @@ app.use("/api/posts", require("./routes/posts"));
 
 // 🌍 Health Check Route
 app.get("/", (req, res) => {
+  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
   res.status(200).json({
     success: true,
     message: "Welcome to the CoopConnect API 🚀",
-    docs: `${
-      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`
-    }/api-docs`,
+    docs: `${baseUrl}/api-docs`,
   });
 });
 
-// ⚠️ Handle Undefined Routes
+// ⚠️ Catch-All for Undefined Routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -86,12 +94,14 @@ app.use(errorHandler);
 // 🧪 Export app for testing (Jest + Supertest)
 module.exports = app;
 
-// 🚀 Only start the server when NOT in test mode
+// 🚀 Start server (only if NOT in test mode)
 if (process.env.NODE_ENV !== "test") {
-  const PORT = process.env.PORT || 10000; // Render default
+  const PORT = process.env.PORT || 10000;
   const HOST = "0.0.0.0";
 
   const server = http.createServer(app);
+
+  // Prevent timeout issues on cloud hosts like Render/Azure
   server.keepAliveTimeout = 120000;
   server.headersTimeout = 120000;
 

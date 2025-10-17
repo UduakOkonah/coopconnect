@@ -1,15 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const coops = require('../controllers/cooperativescontroller'); 
-const { check } = require('express-validator');
-const { protect, authorize } = require('../middleware/auth');
+const cooperatives = require("../controllers/cooperativesController");
+const { protect } = require("../middleware/auth");
 
 /**
  * @openapi
- * tags:
- *   name: Cooperatives
- *   description: Cooperative management
+ * /api/cooperatives:
+ *   get:
+ *     tags: [Cooperatives]
+ *     summary: Get all cooperatives
  */
+router.get("/", cooperatives.getAll);
+
+/**
+ * @openapi
+ * /api/cooperatives/{id}:
+ *   get:
+ *     tags: [Cooperatives]
+ *     summary: Get a cooperative by ID
+ */
+router.get("/:id", cooperatives.getOne);
 
 /**
  * @openapi
@@ -19,122 +29,29 @@ const { protect, authorize } = require('../middleware/auth');
  *     summary: Create a cooperative
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             properties:
- *               name: { type: string }
- *               description: { type: string }
- *               location: { type: string }
- *           example:
- *             name: "Lawrence Okonah"
- *             description: "UyiaHub for Tech Hubs"
- *             location: "Uyo"
- *     responses:
- *       201:
- *         description: Cooperative created
  */
-router.post(
-  '/',
-  protect,
-  [check('name').notEmpty().withMessage('Name required')],
-  coops.create
-);
-
-/**
- * @openapi
- * /api/cooperatives:
- *   get:
- *     tags: [Cooperatives]
- *     summary: Get all cooperatives
- *     responses:
- *       200:
- *         description: OK
- */
-router.get('/', coops.getAll);
-
-/**
- * @openapi
- * /api/cooperatives/{id}:
- *   get:
- *     tags: [Cooperatives]
- *     summary: Get one cooperative
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: OK
- */
-router.get('/:id', coops.getOne);
+router.post("/", protect, cooperatives.create);
 
 /**
  * @openapi
  * /api/cooperatives/{id}:
  *   put:
  *     tags: [Cooperatives]
- *     summary: Update a cooperative
+ *     summary: Update cooperative
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             properties:
- *               name: { type: string }
- *               description: { type: string }
- *               location: { type: string }
- *           example:
- *             name: "Updated Cooperative"
- *             description: "Updated description"
- *             location: "Lagos"
- *     responses:
- *       200:
- *         description: Cooperative updated
- *         content:
- *           application/json:
- *             example:
- *               _id: "60f7f3c2e815cd23a4b5d9a1"
- *               name: "Updated Cooperative"
- *               description: "Updated description"
- *               location: "Lagos"
  */
-router.put('/:id', protect, coops.update);
+router.put("/:id", protect, cooperatives.update);
 
 /**
  * @openapi
  * /api/cooperatives/{id}:
  *   delete:
  *     tags: [Cooperatives]
- *     summary: Delete a cooperative
+ *     summary: Delete cooperative
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: Cooperative deleted
- *         content:
- *           application/json:
- *             example:
- *               message: "Cooperative deleted successfully"
  */
-router.delete('/:id', protect, authorize('admin'), coops.remove);
+router.delete("/:id", protect, cooperatives.remove);
 
 module.exports = router;
