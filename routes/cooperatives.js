@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const cooperatives = require("../controllers/cooperativesontroller");
+const cooperatives = require("../controllers/cooperativesController");
 const { protect } = require("../middleware/auth");
 
 /**
