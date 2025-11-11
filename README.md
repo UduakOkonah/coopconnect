@@ -27,7 +27,7 @@ Built for CSE 341 Final Project (BYU-I).
 
 1. Clone repo
 
-git clone https://github.com/<your-team-repo>/CoopConnect.git
+git clone https://github.com/UduakOkonah/coopconnect.git
 cd CoopConnect
 
 2. Install dependencies
